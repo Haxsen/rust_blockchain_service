@@ -77,7 +77,14 @@ async fn start_restake(req: web::Json<RestakeRequest>, data: web::Data<AppState>
     )
 )]
 async fn confirm_restake(req: web::Json<ConfirmRequest>, data: web::Data<AppState>) -> impl Responder {
-    // TODO
+    let mut operations = data.operations.lock().unwrap();
+
+    if let Some(operation) = operations.iter_mut().find(|op| op.operation_id == req.operation_id) {
+        operation.status = "completed".to_string();
+        HttpResponse::Ok().json(json!({"status": "completed", "message": "Restake operation confirmed and completed"}))
+    } else {
+        HttpResponse::NotFound().json(json!({"status": "error", "message": "Operation not found"}))
+    }
 }
 
 async fn root() -> impl Responder {
