@@ -62,8 +62,20 @@ async fn start_restake(req: web::Json<RestakeRequest>, data: web::Data<AppState>
 
     operations.push(new_operation.clone());
 
-    // TODO: Add Blockchain interaction
-
+    // Blockchain interaction
+    match initiate_restake_on_chain(req.user_id, req.amount).await {
+        Ok(tx_hash) => {
+            return HttpResponse::Ok().json(serde_json::json!({
+            "message": "Restake initiated on blockchain",
+            "operation_id": operations.len(),
+            "transaction_hash": format!("{:?}", tx_hash)
+        }));
+        }
+        Err(e) => {
+            eprintln!("Blockchain interaction failed: {:?}", e);
+            return HttpResponse::InternalServerError().body("Blockchain interaction failed");
+        }
+    }
 }
 
 #[utoipa::path(
