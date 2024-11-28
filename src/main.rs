@@ -36,8 +36,39 @@ struct RestakeOperation {
 }
 
 async fn initiate_restake_on_chain(user_id: i32, amount: f64) -> Result<TxHash, Box<dyn std::error::Error>> {
-    // TODO: Add real implementation
-    Ok(TxHash::from_low_u64_be(123))
+    dotenv().ok();
+
+    // Load environment variables
+    let private_key = env::var("PRIVATE_KEY")?;
+    let rpc_url = env::var("INFURA_URL")?;
+    let contract_address: Address = env::var("CONTRACT_ADDRESS")?.parse()?;
+
+    // Create wallet and provider
+    let wallet: LocalWallet = private_key.parse()?;
+    let provider = Provider::<Http>::try_from(rpc_url)?;
+
+    // Signer middleware with chain ID 420 (Holesky testnet)
+    let client = SignerMiddleware::new(provider, wallet.with_chain_id(420u64));
+    let client = Arc::new(client);
+
+    // Parse the ABI from the file
+    let abi_bytes = include_bytes!("../abi/RestakeContract.json");  // Raw byte array of the ABI
+
+    // Use serde_json to parse the ABI JSON into the Abi type
+    let abi: Abi = serde_json::from_slice(abi_bytes)?;
+
+    // Create the contract instance
+    let contract = Contract::new(contract_address, abi, client);
+
+    // Call the `initiateRestake` method and store the method call result in a variable
+    let method_call = contract.method::<_, U256>("initiateRestake", (user_id, (amount * 1e18) as u64))?;
+
+    // Send the transaction and wait for it to be mined
+    let tx = method_call.send().await?;
+
+    // Wait for the transaction receipt and return the transaction hash
+    let receipt = tx.await?;
+    Ok(receipt.unwrap().transaction_hash)
 }
 
 // Define handlers and associate them with OpenAPI annotations
