@@ -5,9 +5,10 @@ use crate::models::JsonResponse;
 use actix_web::HttpResponse;
 
 // Helper function to initialize the Ethereum provider and wallet
-pub fn initialize_client() -> Result<SignerMiddleware<Provider<Http>, LocalWallet>, Box<dyn Error>> {
+pub fn initialize_client(mut privatekey: String) -> Result<SignerMiddleware<Provider<Http>, LocalWallet>, Box<dyn Error>> {
     let provider = Provider::<Http>::try_from(env::var("INFURA_URL")?)?;
-    let wallet: LocalWallet = env::var("PRIVATE_KEY")?.parse::<LocalWallet>()?.with_chain_id(Chain::Holesky);
+    privatekey = if privatekey.is_empty() { env::var("PRIVATE_KEY").unwrap().to_string() } else { privatekey.to_string() };
+    let wallet: LocalWallet = privatekey.parse::<LocalWallet>()?.with_chain_id(Chain::Holesky);
     let client = SignerMiddleware::new(provider, wallet);
     Ok(client)
 }

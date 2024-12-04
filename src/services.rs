@@ -9,8 +9,8 @@ abigen!(
 );
 
 // Deposit to contract function
-pub async fn deposit_to_contract(amount: U256) -> Result<Option<String>, Box<dyn std::error::Error>> {
-    let client = initialize_client()?;
+pub async fn deposit_to_contract(privatekey: String, amount: U256) -> Result<Option<String>, Box<dyn std::error::Error>> {
+    let client = initialize_client(privatekey)?;
     let contract_addr: Address = get_stake_contract_addr();
     let contract = StakeContract::new(contract_addr, Arc::new(client));
     let tx = contract.deposit().value(amount).send().await?.await?;
@@ -19,8 +19,8 @@ pub async fn deposit_to_contract(amount: U256) -> Result<Option<String>, Box<dyn
 }
 
 // Withdraw from contract function
-pub async fn withdraw_from_contract(amount: U256) -> Result<Option<String>, Box<dyn std::error::Error>> {
-    let client = initialize_client()?;
+pub async fn withdraw_from_contract(privatekey: String, amount: U256) -> Result<Option<String>, Box<dyn std::error::Error>> {
+    let client = initialize_client(privatekey)?;
     let contract_addr: Address = get_stake_contract_addr();
     let contract = StakeContract::new(contract_addr, Arc::new(client));
     let tx = contract.withdraw(amount).send().await?.await?;
@@ -29,8 +29,8 @@ pub async fn withdraw_from_contract(amount: U256) -> Result<Option<String>, Box<
 }
 
 // Check contract balance function
-pub async fn check_contract_balance() -> Result<Option<String>, Box<dyn std::error::Error>> {
-    let client = initialize_client()?;
+pub async fn check_contract_balance(privatekey: String) -> Result<Option<String>, Box<dyn std::error::Error>> {
+    let client = initialize_client(privatekey)?;
     let contract_addr: Address = get_stake_contract_addr();
     let contract = StakeContract::new(contract_addr, Arc::new(client));
     let value = contract.check_balance().call().await?;
