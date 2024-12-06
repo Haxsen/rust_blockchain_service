@@ -1,5 +1,5 @@
 use actix_web::{web, HttpResponse, Responder};
-use crate::models::{DepositRequest, WithdrawRequest};
+use crate::models::{CheckWithWallet, DepositOrWithdraw, DepositOrWithdrawWithWallet};
 use crate::services::{deposit_to_contract, withdraw_from_contract, check_contract_balance};
 use crate::utils::create_response;
 use ethers::types::U256;
@@ -13,15 +13,31 @@ pub async fn root() -> impl Responder {
 #[utoipa::path(
     post,
     path = "/deposit",
-    request_body = DepositRequest,
+    request_body = DepositOrWithdraw,
     responses(
         (status = 200, description = "Deposit confirmed"),
         (status = 500, description = "Server error")
     )
 )]
-pub async fn deposit(req: web::Json<DepositRequest>) -> impl Responder {
+pub async fn deposit(req: web::Json<DepositOrWithdraw>) -> impl Responder {
     let amount: U256 = req.amount.parse().unwrap();
-    let result = deposit_to_contract(amount).await;
+    let result = deposit_to_contract(String::from(""), amount).await;
+    create_response(result)
+}
+
+#[utoipa::path(
+    post,
+    path = "/deposit_with_wallet",
+    request_body = DepositOrWithdrawWithWallet,
+    responses(
+        (status = 200, description = "Deposit confirmed"),
+        (status = 500, description = "Server error")
+    )
+)]
+pub async fn deposit_with_wallet(req: web::Json<DepositOrWithdrawWithWallet>) -> impl Responder {
+    let amount: U256 = req.amount.parse().unwrap();
+    let privkey: String = req.privatekey.parse().unwrap();
+    let result = deposit_to_contract(String::from(privkey), amount).await;
     create_response(result)
 }
 
@@ -29,15 +45,31 @@ pub async fn deposit(req: web::Json<DepositRequest>) -> impl Responder {
 #[utoipa::path(
     post,
     path = "/withdraw",
-    request_body = WithdrawRequest,
+    request_body = DepositOrWithdraw,
     responses(
         (status = 200, description = "Withdraw confirmed"),
         (status = 500, description = "Server error")
     )
 )]
-pub async fn withdraw(req: web::Json<WithdrawRequest>) -> impl Responder {
+pub async fn withdraw(req: web::Json<DepositOrWithdraw>) -> impl Responder {
     let amount: U256 = req.amount.parse().unwrap();
-    let result = withdraw_from_contract(amount).await;
+    let result = withdraw_from_contract(String::from(""), amount).await;
+    create_response(result)
+}
+
+#[utoipa::path(
+    post,
+    path = "/withdraw_with_wallet",
+    request_body = DepositOrWithdrawWithWallet,
+    responses(
+        (status = 200, description = "Withdraw confirmed"),
+        (status = 500, description = "Server error")
+    )
+)]
+pub async fn withdraw_with_wallet(req: web::Json<DepositOrWithdrawWithWallet>) -> impl Responder {
+    let amount: U256 = req.amount.parse().unwrap();
+    let privkey: String = req.privatekey.parse().unwrap();
+    let result = withdraw_from_contract(String::from(privkey), amount).await;
     create_response(result)
 }
 
@@ -51,6 +83,21 @@ pub async fn withdraw(req: web::Json<WithdrawRequest>) -> impl Responder {
     )
 )]
 pub async fn check_balance() -> impl Responder {
-    let result = check_contract_balance().await;
+    let result = check_contract_balance(String::from("")).await;
+    create_response(result)
+}
+
+#[utoipa::path(
+    post,
+    path = "/check_balance_with_wallet",
+    request_body = CheckWithWallet,
+    responses(
+        (status = 200, description = "Returns wallet address's balance"),
+        (status = 500, description = "Server error")
+    )
+)]
+pub async fn check_balance_with_wallet(req: web::Json<CheckWithWallet>) -> impl Responder {
+    let privkey: String = req.privatekey.parse().unwrap();
+    let result = check_contract_balance(String::from(privkey)).await;
     create_response(result)
 }
